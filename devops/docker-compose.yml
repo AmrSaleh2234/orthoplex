@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: ./devops/php.dockerfile
+    restart: unless-stopped
+    volumes:
+      - ../:/var/www/html
+    depends_on:
+      - mysql
+      - redis
+      - mailhog
+  nginx:
+    build:
+      context: ..
+      dockerfile: ./devops/nginx.dockerfile
+    ports:
+      - "9000:80"
+    volumes:
+      - ../:/var/www/html
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+      - mysql
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+  mailhog:
+    image: mailhog/mailhog
+    container_name: laravel_mailhog
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+  composer:
+    build:
+      context: ..
+      dockerfile: ./devops/composer.dockerfile
+    volumes:
+      - ../:/var/www/html
+
+volumes:
+  mysql_data:
