@@ -18,6 +18,10 @@ yarn-error.log
 /auth.json
 /.fleet
 /.idea
+{{ ... }}
 /.nova
 /.vscode
 /.zed
+
+# Challenge blueprint files
+*.md

@@ -1,0 +1,5 @@
+{
+    "User": true,
+    "Tenant": true,
+    "Auth": true
+}
