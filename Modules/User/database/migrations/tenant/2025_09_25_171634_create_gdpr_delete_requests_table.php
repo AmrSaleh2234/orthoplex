@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('gdpr_delete_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->string('status')->default('pending'); // pending, approved, denied
             $table->timestamps();

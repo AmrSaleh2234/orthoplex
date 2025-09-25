@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('login_events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->string('ip_address')->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamp('login_at')->useCurrent();

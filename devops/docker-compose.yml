@@ -37,6 +37,7 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
   redis:
     image: redis:alpine
     restart: unless-stopped
@@ -54,6 +55,26 @@ services:
       dockerfile: ./devops/composer.dockerfile
     volumes:
       - ../:/var/www/html
+  adminer:
+      image: adminer:latest
+      container_name: adminer
+      restart: unless-stopped
+      ports:
+          - "127.0.0.1:8080:8080"   # bind to localhost for safety
+
+  phpmyadmin:
+      image: phpmyadmin/phpmyadmin:latest
+      container_name: phpmyadmin
+      restart: unless-stopped
+      depends_on:
+          - mysql
+      environment:
+          PMA_HOST: mysql        # اسم خدمة MySQL في docker-compose
+          PMA_PORT: 3306
+          # Optional: PMA_ARBITRARY=1  # لو عايز تسمح بالاتصال لأي host من الواجهة
+      ports:
+          - "127.0.0.1:8081:80"
+
 
 volumes:
   mysql_data:

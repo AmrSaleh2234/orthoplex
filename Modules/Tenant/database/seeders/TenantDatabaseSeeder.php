@@ -12,15 +12,12 @@ class TenantDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $tenant = Tenant::firstOrCreate(
-            ['id' => 'default'],
-            ['name' => 'Default Tenant']
-        );
-
-        if ($tenant->wasRecentlyCreated) {
-            $tenant->domains()->create([
-                'domain' => 'default.localhost',
-            ]);
+        $tenant =Tenant::query()->where("id","default")->first();
+        if (!$tenant) {
+            $tenant = Tenant::create(
+                ['name' => 'Default Tenant',"id"=>"default"]
+            );
+            $tenant->domains()->create(['domain' => 'default.localhost']);
         }
     }
 }

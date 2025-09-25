@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->afterResolving('migrator', function (Migrator $migrator) {
+            $migrator->path(database_path('migrations'));
+        });
     }
 
     /**
