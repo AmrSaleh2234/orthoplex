@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/webhooks",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Webhooks\\": "app/",
+            "Modules\\Webhooks\\Database\\Factories\\": "database/factories/",
+            "Modules\\Webhooks\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Webhooks\\Tests\\": "tests/"
+        }
+    }
+}

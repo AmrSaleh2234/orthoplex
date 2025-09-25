@@ -45,7 +45,7 @@ return [
          * Connection used as a "template" for the dynamically created tenant database connection.
          * Note: don't name your template connection tenant. That name is reserved by package.
          */
-        'template_tenant_connection' => 'mysql',
+        'template_tenant_connection' => env('DB_TENANT_CONNECTION', 'mysql'),
 
         /**
          * Tenant database names are created like this:
@@ -189,6 +189,9 @@ return [
             database_path('migrations/tenant'),
             base_path('Modules/User/database/migrations/tenant'),
             base_path('Modules/Auth/database/migrations/tenant'),
+            base_path('Modules/RolesAndPermissions/database/migrations/tenant'),
+            base_path('Modules/Analytics/database/migrations/tenant'),
+            base_path('Modules/Webhooks/database/migrations/tenant'),
         ],
         '--realpath' => true,
     ],
@@ -197,7 +200,7 @@ return [
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class
+        '--class' => 'Database\Seeders\TenantDatabaseSeeder', // root seeder class
         // '--force' => true, // This needs to be true to seed tenant databases in production
     ],
 ];

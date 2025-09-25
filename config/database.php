@@ -42,6 +42,13 @@ return [
             'synchronous' => null,
         ],
 
+        'sqlite_tenant' => [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+        ],
+
         'central' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

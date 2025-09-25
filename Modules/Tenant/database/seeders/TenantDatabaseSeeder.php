@@ -3,6 +3,7 @@
 namespace Modules\Tenant\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Tenant\Models\Tenant;
 
 class TenantDatabaseSeeder extends Seeder
 {
@@ -11,6 +12,15 @@ class TenantDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        $tenant = Tenant::firstOrCreate(
+            ['id' => 'default'],
+            ['name' => 'Default Tenant']
+        );
+
+        if ($tenant->wasRecentlyCreated) {
+            $tenant->domains()->create([
+                'domain' => 'default.localhost',
+            ]);
+        }
     }
 }

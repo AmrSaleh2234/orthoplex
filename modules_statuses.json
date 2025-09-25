@@ -1,5 +1,8 @@
 {
     "User": true,
     "Tenant": true,
-    "Auth": true
+    "Auth": true,
+    "RolesAndPermissions": true,
+    "Analytics": true,
+    "Webhooks": true
 }
