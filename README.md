@@ -1,66 +1,149 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+    # Orthoplex Multi-Tenant SaaS API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is a comprehensive, multi-tenant SaaS backend API built with Laravel. It features a modular architecture, robust authentication, complete user management, and extensive API documentation. The entire environment is containerized with Docker for easy setup and consistent development.
 
-## About Laravel
+## ✨ Core Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+*   **Multi-Tenancy**: Database-per-tenant architecture using `stancl/tenancy` for complete data isolation between tenants.
+*   **Modular Architecture**: Code is organized into domain-specific modules (e.g., `Auth`, `User`, `Webhooks`) using `nwidart/laravel-modules` for clean separation of concerns and scalability.
+*   **Hybrid JWT Authentication**: Secure, stateless authentication using `tymon/jwt-auth` with support for:
+    *   Email/Password login.
+    *   Two-Factor Authentication (2FA) via Google Authenticator.
+    *   Passwordless Magic Link login.
+    *   Email verification for new accounts.
+*   **Role-Based Access Control (RBAC)**: Granular permission management for both central and tenant users, powered by `spatie/laravel-permission`.
+*   **Complete User CRUD**: Full-featured user management API following Service and Repository patterns, including:
+    *   Create, Read, Update, Delete (CRUD) operations.
+    *   Soft Deletes and User Restoration.
+    *   Bulk operations (e.g., bulk delete, bulk status change).
+    *   Advanced search and filtering capabilities.
+*   **Webhook System**: A simplified and extensible system for notifying external services of events within the application.
+*   **API Documentation**: Comprehensive and interactive API documentation powered by OpenAPI (Swagger) and `l5-swagger`.
+*   **Dockerized Environment**: A consistent and reproducible development environment managed with Docker and Docker Compose.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Getting Started
 
-## Learning Laravel
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Prerequisites
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+*   [Docker](https://www.docker.com/get-started)
+*   [Docker Compose](https://docs.docker.com/compose/install/)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📦 Installation with Docker
 
-## Laravel Sponsors
+1.  **Clone the Repository**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+    ```bash
+    git clone <your-repository-url>
+    cd orthoplex
+    ```
 
-### Premium Partners
+2.  **Create Environment File**
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+    Copy the example environment file. The default settings are configured to work with the Docker setup.
 
-## Contributing
+    ```bash
+    copy .env.example .env
+    ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3.  **Build and Run Docker Containers**
 
-## Code of Conduct
+    Navigate to the `devops` directory and run the containers in detached mode.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    ```bash
+    cd devops
+    docker-compose up -d --build
+    ```
 
-## Security Vulnerabilities
+4.  **Install Dependencies**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    Install the PHP dependencies using Composer inside the `app` container.
 
-## License
+    ```bash
+    docker-compose exec app composer install
+    ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+5.  **Generate Application Key**
+
+    ```bash
+    docker-compose exec app php artisan key:generate
+    ```
+
+6.  **Run Database Migrations**
+
+    Run the migrations for the central (landlord) database.
+
+    ```bash
+    docker-compose exec app php artisan migrate --seed
+    ```
+
+    This will set up the central tables for users, tenants, and system data. The seeder will create a default admin user and necessary permissions.
+
+7.  **Generate API Documentation**
+
+    Generate the OpenAPI specification file.
+
+    ```bash
+    docker-compose exec app php artisan l5-swagger:generate
+    ```
+
+### Your environment is now ready! 🎉
+
+---
+
+## 🐳 Available Services
+
+Once the Docker containers are running, the following services will be available:
+
+| Service         | URL                            | Description                                  |
+| --------------- | ------------------------------ | -------------------------------------------- |
+| **Application**   | `http://localhost:9000`        | The main entry point for the Nginx web server. |
+| **API Docs (UI)** | `http://localhost:9000/api/documentation` | **Interactive Swagger UI for API testing.**      |
+| **Database**      | `localhost:3307`               | MySQL database connection port.              |
+| **phpMyAdmin**    | `http://localhost:8081`        | Web UI for managing the MySQL database.      |
+| **Adminer**       | `http://localhost:8080`        | Alternative lightweight database manager.    |
+| **MailHog**       | `http://localhost:8025`        | Catches all outgoing emails for testing.     |
+| **Redis**         | `localhost:6379`               | In-memory cache and queue broker.            |
+
+---
+
+## 📚 API Documentation
+
+This project uses `l5-swagger` to generate interactive API documentation from OpenAPI annotations in the code.
+
+*   **Interactive UI**: To explore and test the API endpoints, visit:
+    [**http://localhost:9000/api/documentation**](http://localhost:9000/api/documentation)
+
+*   **Raw JSON Spec**: The raw OpenAPI JSON file is available at:
+    [http://localhost:9000/docs](http://localhost:9000/docs)
+
+If you make changes to the API annotations, you must regenerate the documentation:
+
+```bash
+docker-compose exec app php artisan l5-swagger:generate
+```
+
+---
+
+## ⚙️ Key API Endpoints
+
+Here are some of the primary endpoints to get you started.
+
+### Authentication
+
+*   `POST /api/auth/register`: Register a new central user.
+*   `POST /api/auth/login`: Authenticate and receive a JWT.
+*   `POST /api/auth/login/2fa`: Verify a 2FA code after login.
+
+### User Management (Requires Auth)
+
+*   `GET /api/users`: List all users with pagination and filtering.
+*   `POST /api/users`: Create a new user.
+*   `GET /api/users/{id}`: Retrieve a specific user's details.
+*   `PUT /api/users/{id}`: Update a user.
+*   `DELETE /api/users/{id}`: Soft delete a user.
+
+> **Note**: For a full list of endpoints, please refer to the [Swagger Documentation](http://localhost:9000/api/documentation).

@@ -56,7 +56,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/auth/register",
+     *     path="/auth/register",
      *     operationId="registerUser",
      *     tags={"Authentication"},
      *     summary="Register a new user",
@@ -290,7 +290,7 @@ class AuthController extends Controller
     public function verifyEmail(Request $request): JsonResponse
     {
         $token = $request->query('token');
-        
+
         if (!$token) {
             return $this->errorResponse('Verification token is required.', 400);
         }
@@ -306,14 +306,14 @@ class AuthController extends Controller
         }
 
         $centralUser = CentralUser::where('email', $magicLink->email)->first();
-        
+
         if (!$centralUser) {
             return $this->errorResponse('User not found.', 404);
         }
 
         // Mark email as verified
         $centralUser->markEmailAsVerified();
-        
+
         // Mark magic link as used
         $magicLink->markAsUsed();
 
@@ -367,9 +367,9 @@ class AuthController extends Controller
     public function resendVerification(Request $request, RegisterService $registerService): JsonResponse
     {
         $request->validate(['email' => 'required|email']);
-        
+
         $centralUser = CentralUser::where('email', $request->email)->first();
-        
+
         if (!$centralUser) {
             return $this->errorResponse('User not found.', 404);
         }
@@ -379,7 +379,7 @@ class AuthController extends Controller
         }
 
         $result = $registerService->resendEmailVerification($request->email);
-        
+
         if ($result['status'] === 'error') {
             return $this->errorResponse($result['message'], 400);
         }
@@ -393,9 +393,9 @@ class AuthController extends Controller
     public function magicLinkLogin(Request $request, LoginService $loginService): JsonResponse
     {
         $request->validate(['token' => 'required|string']);
-        
+
         $result = $loginService->loginWithMagicLink($request->token, $request);
-        
+
         if ($result['status'] === 'error') {
             return $this->errorResponse($result['message'], 401);
         }
@@ -409,9 +409,9 @@ class AuthController extends Controller
     public function requestMagicLink(Request $request, LoginService $loginService): JsonResponse
     {
         $request->validate(['email' => 'required|email']);
-        
+
         $result = $loginService->sendMagicLink($request->email);
-        
+
         if ($result['status'] === 'error') {
             return $this->errorResponse($result['message'], 400);
         }
@@ -425,9 +425,9 @@ class AuthController extends Controller
     public function refreshToken(Request $request, LoginService $loginService): JsonResponse
     {
         $request->validate(['refresh_token' => 'required|string']);
-        
+
         $result = $loginService->refreshToken($request->refresh_token);
-        
+
         if ($result['status'] === 'error') {
             return $this->errorResponse($result['message'], 401);
         }
@@ -441,7 +441,7 @@ class AuthController extends Controller
     public function logout(Request $request, LoginService $loginService): JsonResponse
     {
         $result = $loginService->logout($request);
-        
+
         if ($result['status'] === 'error') {
             return $this->errorResponse($result['message'], 400);
         }
@@ -455,7 +455,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = auth()->user();
-        
+
         if (!$user) {
             return $this->errorResponse('Unauthenticated.', 401);
         }
@@ -482,7 +482,7 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60,
         ];
-        
+
         if ($refreshToken) {
             $data['refresh_token'] = $refreshToken;
         }
