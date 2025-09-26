@@ -15,7 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Register custom authentication middlewares
+        $middleware->alias([
+            'jwt.auth' => \Modules\Auth\Http\Middleware\JwtAuthMiddleware::class,
+            'hybrid.auth' => \Modules\Auth\Http\Middleware\HybridAuthMiddleware::class,
+        ]);
+        
+        // Configure middleware groups
+        $middleware->group('api', [
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

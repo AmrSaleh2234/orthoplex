@@ -11,12 +11,14 @@ use Illuminate\Notifications\Notifiable;
 use Modules\User\Models\TwoFactorAuthentication;
 use Spatie\Permission\Traits\HasRoles;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
+use Stancl\Tenancy\Database\Contracts\Syncable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject, MustVerifyEmail
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail, Syncable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, BelongsToTenant, HasRoles, SoftDeletes;
+    use HasFactory, Notifiable, BelongsToTenant, HasRoles, SoftDeletes, ResourceSyncing;
 
     /**
      * The attributes that are mass assignable.
@@ -27,7 +29,9 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'name',
         'email',
         'password',
-        'tenant_id',
+        'email_verified_at',
+        'status',
+        'global_id', // Required for synced resources
     ];
 
     /**
@@ -81,6 +85,44 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    /**
+     * Get the global identifier key (required for Syncable)
+     */
+    public function getGlobalIdentifierKey()
+    {
+        return $this->getAttribute($this->getGlobalIdentifierKeyName());
+    }
+
+    /**
+     * Get the global identifier key name (required for Syncable)
+     */
+    public function getGlobalIdentifierKeyName(): string
+    {
+        return 'global_id';
+    }
+
+    /**
+     * Get the central model name (required for Syncable)
+     */
+    public function getCentralModelName(): string
+    {
+        return CentralUser::class;
+    }
+
+    /**
+     * Get the synced attribute names (required for Syncable)
+     * Only sync basic user info from central, keep tenant-specific data separate
+     */
+    public function getSyncedAttributeNames(): array
+    {
+        return [
+            'name',
+            'email',
+            'email_verified_at',
+            'status', // Allow status sync for account suspension
+        ];
     }
 
     public function twoFactorAuthentication(): HasOne

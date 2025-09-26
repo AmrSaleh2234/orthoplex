@@ -5,24 +5,70 @@ use Modules\User\Http\Controllers\GdprController;
 use Modules\User\Http\Controllers\UserController;
 
 Route::middleware('auth:api')->prefix('v1')->group(function () {
+    // Standard CRUD routes for users
     Route::apiResource('users', UserController::class)->names('user');
 
-    // User Management
+    // Extended User Management routes
     Route::prefix('users')->group(function () {
+        // Basic CRUD (already covered by apiResource above, but explicit for clarity)
         Route::get('/', [UserController::class, 'index'])
             ->middleware('permission:users.read')
             ->name('users.index');
 
-        Route::delete('/{user}', [UserController::class, 'destroy'])
+        Route::post('/', [UserController::class, 'store'])
+            ->middleware('permission:users.create')
+            ->name('users.store');
+
+        Route::get('/{id}', [UserController::class, 'show'])
+            ->middleware('permission:users.read')
+            ->name('users.show');
+
+        Route::put('/{id}', [UserController::class, 'update'])
+            ->middleware('permission:users.update')
+            ->name('users.update');
+
+        Route::delete('/{id}', [UserController::class, 'destroy'])
             ->middleware('permission:users.delete')
             ->name('users.destroy');
 
+        // Additional user management operations
         Route::post('/{id}/restore', [UserController::class, 'restore'])
             ->middleware('permission:users.restore')
             ->name('users.restore');
+
+        Route::get('/search', [UserController::class, 'search'])
+            ->middleware('permission:users.read')
+            ->name('users.search');
+
+        Route::get('/status/{status}', [UserController::class, 'getByStatus'])
+            ->middleware('permission:users.read')
+            ->name('users.by-status');
+
+        Route::get('/trashed/list', [UserController::class, 'trashed'])
+            ->middleware('permission:users.read')
+            ->name('users.trashed');
+
+        // User status management
+        Route::patch('/{id}/status', [UserController::class, 'updateStatus'])
+            ->middleware('permission:users.update')
+            ->name('users.update-status');
+
+        // Role management
+        Route::post('/{id}/roles', [UserController::class, 'assignRole'])
+            ->middleware('permission:roles.assign')
+            ->name('users.assign-role');
+
+        Route::delete('/{id}/roles', [UserController::class, 'removeRole'])
+            ->middleware('permission:roles.assign')
+            ->name('users.remove-role');
+
+        // Bulk operations
+        Route::post('/bulk', [UserController::class, 'bulkOperation'])
+            ->middleware('permission:users.bulk')
+            ->name('users.bulk');
     });
 
-    // GDPR
+    // GDPR Compliance Routes
     Route::prefix('gdpr')->group(function () {
         Route::post('/export', [GdprController::class, 'requestExport'])->name('gdpr.export');
 
