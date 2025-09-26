@@ -5,8 +5,11 @@ namespace Modules\Auth\Services;
 use Modules\Auth\Repositories\UserRepository;
 use Modules\User\Models\CentralUser;
 use Modules\Auth\Models\MagicLink;
+use Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Modules\Auth\Mail\EmailVerificationMail;
+use Stancl\Tenancy\Facades\Tenancy;
 
 class RegisterService
 {
@@ -18,9 +21,9 @@ class RegisterService
     }
 
     /**
-     * Register new user in central database
+     * Register new user in central database and optionally sync to tenant
      */
-    public function register(array $data): array
+    public function register(array $data, ?string $tenantId = null): array
     {
         // Check if user already exists
         $existingUser = $this->userRepository->findByEmail($data['email']);
@@ -28,8 +31,22 @@ class RegisterService
             return ['status' => 'error', 'message' => 'User already exists'];
         }
 
+        // Validate tenant if provided
+        $tenant = null;
+        if ($tenantId) {
+            $tenant = Tenant::find($tenantId);
+            if (!$tenant) {
+                return ['status' => 'error', 'message' => 'Invalid tenant ID provided'];
+            }
+        }
+
         // Create user in central database
         $user = $this->userRepository->create($data);
+
+        // Handle tenant-aware registration if tenant is provided
+        if ($tenant) {
+            $this->syncUserToTenant($user, $tenant);
+        }
 
         // Create email verification token using MagicLink model
         $magicLink = $this->userRepository->createMagicLinkToken(
@@ -46,10 +63,12 @@ class RegisterService
             'message' => 'User registered successfully. Please check your email to verify your account.',
             'user' => [
                 'id' => $user->id,
+                'global_id' => $user->global_id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'status' => $user->status,
-            ]
+            ],
+            'tenant_synced' => !is_null($tenant)
         ];
     }
 
@@ -135,5 +154,46 @@ class RegisterService
         $verificationUrl = config('app.frontend_url') . '/verify-email?token=' . $token;
 
         Mail::to($email)->send(new EmailVerificationMail($verificationUrl));
+    }
+
+    /**
+     * Sync central user to tenant database using Stancl resource syncing
+     */
+    protected function syncUserToTenant(CentralUser $centralUser, Tenant $tenant): void
+    {
+        try {
+            // Associate the central user with the tenant in the pivot table
+            $centralUser->tenants()->attach($tenant->id, [
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Initialize tenant context and sync the user to tenant database
+            Tenancy::initialize($tenant);
+            
+            // The ResourceSyncing trait will automatically sync the user
+            // when the pivot relationship is created
+            $centralUser->sync();
+            
+            Log::info('User successfully synced to tenant', [
+                'user_id' => $centralUser->id,
+                'global_id' => $centralUser->global_id,
+                'tenant_id' => $tenant->id,
+                'tenant_key' => $tenant->getTenantKey()
+            ]);
+            
+        } catch (\Exception $e) {
+            // Log the error but don't fail the registration
+            Log::warning('Failed to sync user to tenant', [
+                'user_id' => $centralUser->id,
+                'global_id' => $centralUser->global_id,
+                'tenant_id' => $tenant->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        } finally {
+            // Always end tenancy context
+            Tenancy::end();
+        }
     }
 }

@@ -61,6 +61,13 @@ class AuthController extends Controller
      *     tags={"Authentication"},
      *     summary="Register a new user",
      *     description="Register a new user account with email verification",
+     *     @OA\Parameter(
+     *         name="X-Tenant",
+     *         in="header",
+     *         description="Optional tenant ID for tenant-aware registration",
+     *         required=false,
+     *         @OA\Schema(type="string", example="tenant-uuid-here")
+     *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         description="User registration data",
@@ -103,7 +110,10 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request, RegisterService $registerService): JsonResponse
     {
-        $result = $registerService->register($request->validated());
+        // Get tenant ID from X-Tenant header
+        $tenantId = $request->header('X-Tenant');
+
+        $result = $registerService->register($request->validated(), $tenantId);
 
         if ($result['status'] === 'error') {
             return $this->errorResponse($result['message'], 400);
