@@ -8,17 +8,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Modules\User\Models\CentralUser;
 use Modules\User\Models\TwoFactorAuthentication;
 use Spatie\Permission\Traits\HasRoles;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Stancl\Tenancy\Contracts\Syncable;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
-use Stancl\Tenancy\Database\Contracts\Syncable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject, MustVerifyEmail, Syncable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, BelongsToTenant, HasRoles, SoftDeletes, ResourceSyncing;
+    use HasFactory, Notifiable, HasRoles, SoftDeletes, ResourceSyncing;
 
     /**
      * The attributes that are mass assignable.
@@ -87,34 +87,30 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail, Synca
         return [];
     }
 
+
+    public function twoFactorAuthentication(): HasOne
+    {
+        return $this->hasOne(TwoFactorAuthentication::class);
+    }
+
     /**
-     * Get the global identifier key (required for Syncable)
+     * Sync methods required by Stancl Tenancy
      */
     public function getGlobalIdentifierKey()
     {
         return $this->getAttribute($this->getGlobalIdentifierKeyName());
     }
 
-    /**
-     * Get the global identifier key name (required for Syncable)
-     */
     public function getGlobalIdentifierKeyName(): string
     {
         return 'global_id';
     }
 
-    /**
-     * Get the central model name (required for Syncable)
-     */
     public function getCentralModelName(): string
     {
         return CentralUser::class;
     }
 
-    /**
-     * Get the synced attribute names (required for Syncable)
-     * Only sync basic user info from central, keep tenant-specific data separate
-     */
     public function getSyncedAttributeNames(): array
     {
         return [
@@ -123,10 +119,5 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail, Synca
             'email_verified_at',
             'status', // Allow status sync for account suspension
         ];
-    }
-
-    public function twoFactorAuthentication(): HasOne
-    {
-        return $this->hasOne(TwoFactorAuthentication::class);
     }
 }

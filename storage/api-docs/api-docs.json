@@ -22,6 +22,18 @@
                 "summary": "Register a new user",
                 "description": "Register a new user account with email verification",
                 "operationId": "registerUser",
+                "parameters": [
+                    {
+                        "name": "X-Tenant",
+                        "in": "header",
+                        "description": "Optional tenant ID for tenant-aware registration",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "tenant-uuid-here"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "description": "User registration data",
                     "required": true,
