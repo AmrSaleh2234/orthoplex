@@ -17,11 +17,6 @@ namespace App\Http\Controllers;
  *     )
  * )
  * 
- * @OA\Server(
- *     url="/api",
- *     description="API Server"
- * )
- * 
  * @OA\SecurityScheme(
  *     securityScheme="bearerAuth",
  *     type="http",

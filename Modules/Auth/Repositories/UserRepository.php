@@ -3,9 +3,10 @@
 namespace Modules\Auth\Repositories;
 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\User\Models\CentralUser;
 use Modules\Auth\Models\JwtRefreshToken;
-use Modules\Auth\Models\MagicLinkToken;
+use Modules\Auth\Models\MagicLink;
 
 class UserRepository
 {
@@ -72,21 +73,6 @@ class UserRepository
             ->first();
     }
 
-    /**
-     * Create magic link token
-     */
-    public function createMagicLinkToken(string $email, string $type = 'login', array $metadata = []): MagicLinkToken
-    {
-        return MagicLinkToken::createToken($email, $type, 15, $metadata);
-    }
-
-    /**
-     * Find valid magic link token
-     */
-    public function findValidMagicLinkToken(string $token, string $type = 'login'): ?MagicLinkToken
-    {
-        return MagicLinkToken::findValidToken($token, $type);
-    }
 
     /**
      * Revoke all refresh tokens for user
@@ -94,5 +80,36 @@ class UserRepository
     public function revokeAllRefreshTokens(int $userId): int
     {
         return JwtRefreshToken::revokeAllForUser($userId);
+    }
+
+    /**
+     * Create magic link token using the existing MagicLink model
+     */
+    public function createMagicLinkToken(string $email, string $type = 'login', array $metadata = []): MagicLink
+    {
+        $user = $this->findByEmail($email);
+        if (!$user) {
+            throw new \Exception('User not found');
+        }
+
+        // Revoke existing unused tokens for this user
+        MagicLink::where('user_id', $user->id)->delete();
+
+        return MagicLink::create([
+            'user_id' => $user->id,
+            'token' => hash('sha256', Str::random(60) . microtime()),
+            'expires_at' => now()->addMinutes(15),
+        ]);
+    }
+
+    /**
+     * Find valid magic link token using the existing MagicLink model
+     */
+    public function findValidMagicLinkToken(string $token, string $type = 'login'): ?MagicLink
+    {
+        return MagicLink::where('token', $token)
+            ->where('expires_at', '>', now())
+            ->with('user')
+            ->first();
     }
 }

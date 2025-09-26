@@ -4,7 +4,7 @@ namespace Modules\Auth\Services;
 
 use Modules\Auth\Repositories\UserRepository;
 use Modules\User\Models\CentralUser;
-use Modules\Auth\Models\MagicLinkToken;
+use Modules\Auth\Models\MagicLink;
 use Illuminate\Support\Facades\Mail;
 use Modules\Auth\Mail\EmailVerificationMail;
 
@@ -31,7 +31,7 @@ class RegisterService
         // Create user in central database
         $user = $this->userRepository->create($data);
 
-        // Create email verification token
+        // Create email verification token using MagicLink model
         $magicLink = $this->userRepository->createMagicLinkToken(
             $user->email,
             'email_verification',
@@ -64,7 +64,7 @@ class RegisterService
             return ['status' => 'error', 'message' => 'Invalid or expired verification token'];
         }
 
-        $user = $this->userRepository->findByEmail($magicLink->email);
+        $user = $magicLink->user;
 
         if (!$user) {
             return ['status' => 'error', 'message' => 'User not found'];
@@ -77,8 +77,8 @@ class RegisterService
         // Mark email as verified
         $user->markEmailAsVerified();
 
-        // Mark token as used
-        $magicLink->markAsUsed();
+        // Delete the used magic link token
+        $magicLink->delete();
 
         return [
             'status' => 'success',

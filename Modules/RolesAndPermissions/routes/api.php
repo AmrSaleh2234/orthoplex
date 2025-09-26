@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\RolesAndPermissions\Http\Controllers\RolesAndPermissionsController;
+use Modules\RolesAndPermissions\app\Http\Controllers\RolesAndPermissionsController;
 use Modules\RolesAndPermissions\app\Http\Controllers\InvitationController;
 use Modules\RolesAndPermissions\app\Http\Controllers\RoleController;
 

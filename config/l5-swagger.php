@@ -159,8 +159,8 @@ return [
              * @see \OpenApi\scan
              */
             'exclude' => [
-                base_path('Modules/RolesAndPermissions/Http/Controllers/RolesAndPermissionsController.php'),
-                base_path('Modules/Analytics/Http/Controllers/AnalyticsController.php'),
+                base_path('Modules/RolesAndPermissions/app/Http/Controllers/RolesAndPermissionsController.php'),
+                base_path('Modules/Analytics/app/Http/Controllers/AnalyticsController.php'),
             ],
 
             /*

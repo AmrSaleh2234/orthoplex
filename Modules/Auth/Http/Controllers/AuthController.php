@@ -15,7 +15,7 @@ use Modules\Auth\Services\RegisterService;
 use Modules\Auth\Services\TwoFactorService;
 use Modules\User\Models\CentralUser;
 use Modules\User\Models\User;
-use Modules\Auth\Models\MagicLinkToken;
+use Modules\Auth\Models\MagicLink;
 use Stancl\Tenancy\Facades\Tenancy;
 
 /**
@@ -56,7 +56,7 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/auth/register",
+     *     path="/api/register",
      *     operationId="registerUser",
      *     tags={"Authentication"},
      *     summary="Register a new user",
@@ -295,17 +295,16 @@ class AuthController extends Controller
             return $this->errorResponse('Verification token is required.', 400);
         }
 
-        $magicLink = MagicLinkToken::where('token', $token)
-            ->where('type', 'email_verification')
+        $magicLink = MagicLink::where('token', $token)
             ->where('expires_at', '>', now())
-            ->where('used_at', null)
+            ->with('user')
             ->first();
 
         if (!$magicLink) {
             return $this->errorResponse('Invalid or expired verification token.', 400);
         }
 
-        $centralUser = CentralUser::where('email', $magicLink->email)->first();
+        $centralUser = $magicLink->user;
 
         if (!$centralUser) {
             return $this->errorResponse('User not found.', 404);
@@ -314,8 +313,8 @@ class AuthController extends Controller
         // Mark email as verified
         $centralUser->markEmailAsVerified();
 
-        // Mark magic link as used
-        $magicLink->markAsUsed();
+        // Delete the used magic link token
+        $magicLink->delete();
 
         return $this->successResponse(null, 'Email verified successfully.');
     }

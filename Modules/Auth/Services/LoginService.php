@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Modules\Auth\Repositories\UserRepository;
 use Modules\Auth\Models\JwtRefreshToken;
-use Modules\Auth\Models\MagicLinkToken;
+use Modules\Auth\Models\MagicLink;
 use Modules\User\Models\CentralUser;
 use Modules\Analytics\Services\LoginAnalyticsService;
 use Stancl\Tenancy\Facades\Tenancy;
@@ -104,30 +104,6 @@ class LoginService
         return $this->generateTokens($user, $request);
     }
 
-    /**
-     * Login with magic link token
-     */
-    public function loginWithMagicLink(string $token, ?Request $request = null): array
-    {
-        $magicLink = $this->userRepository->findValidMagicLinkToken($token, 'login');
-
-        if (!$magicLink) {
-            return ['status' => 'error', 'message' => 'Invalid or expired magic link'];
-        }
-
-        $user = $this->userRepository->findByEmail($magicLink->email);
-
-        if (!$user) {
-            return ['status' => 'error', 'message' => 'User not found'];
-        }
-
-        // Mark magic link as used
-        $ipAddress = $request?->ip();
-        $userAgent = $request?->userAgent();
-        $magicLink->markAsUsed($ipAddress, $userAgent);
-
-        return $this->generateTokens($user, $request);
-    }
 
     /**
      * Refresh JWT token
@@ -237,11 +213,30 @@ class LoginService
     }
 
     /**
-     * Login with magic link token
+     * Login with magic link token using the existing MagicLink model
      */
+    public function loginWithMagicLink(string $token, ?Request $request = null): array
+    {
+        $magicLink = $this->userRepository->findValidMagicLinkToken($token, 'login');
+
+        if (!$magicLink) {
+            return ['status' => 'error', 'message' => 'Invalid or expired magic link'];
+        }
+
+        $user = $magicLink->user;
+
+        if (!$user) {
+            return ['status' => 'error', 'message' => 'User not found'];
+        }
+
+        // Delete the used magic link token
+        $magicLink->delete();
+
+        return $this->generateTokens($user, $request);
+    }
 
     /**
-     * Send magic link for passwordless login
+     * Send magic link for passwordless login using the existing MagicLink model
      */
     public function sendMagicLink(string $email): array
     {
@@ -258,15 +253,14 @@ class LoginService
             return ['status' => 'error', 'message' => 'Account not active'];
         }
 
-        // Create magic link token
+        // Create magic link token using the existing MagicLink model
         $magicLink = $this->userRepository->createMagicLinkToken(
             $email,
             'magic_login',
             ['user_id' => $user->id]
         );
 
-        // Send magic link email
-        // TODO: Create MagicLinkMail class
+        // TODO: Send magic link email
         // Mail::to($email)->send(new MagicLinkMail($magicLink->token));
 
         return [

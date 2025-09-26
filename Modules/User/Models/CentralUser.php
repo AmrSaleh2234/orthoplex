@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Stancl\Tenancy\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Concerns\CentralConnection;
 use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
-use Stancl\Tenancy\Database\Contracts\SyncMaster;
 use Stancl\Tenancy\Database\Models\TenantPivot;
 use Modules\Tenant\Models\Tenant;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -18,13 +18,15 @@ class CentralUser extends Authenticatable implements SyncMaster, JWTSubject
 {
     use ResourceSyncing, CentralConnection, Notifiable;
 
+    protected $connection="mysql";
+
     /**
      * Boot the model and set up event listeners.
      */
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($user) {
             if (empty($user->global_id)) {
                 $user->global_id = (string) Str::uuid();
@@ -45,15 +47,7 @@ class CentralUser extends Authenticatable implements SyncMaster, JWTSubject
         'email',
         'password',
         'email_verified_at',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
-        'two_factor_enabled',
-        'last_login_at',
-        'login_count',
-        'status',
-        'preferences',
-        'gdpr_deletion_requested_at',
-        'gdpr_deletion_approved',
+
     ];
 
     /**
@@ -216,7 +210,7 @@ class CentralUser extends Authenticatable implements SyncMaster, JWTSubject
     {
         $google2fa = new \PragmaRX\Google2FA\Google2FA();
         $secret = $google2fa->generateSecretKey();
-        
+
         $this->update([
             'two_factor_secret' => encrypt($secret)
         ]);

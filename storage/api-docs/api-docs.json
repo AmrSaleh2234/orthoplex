@@ -13,14 +13,8 @@
         },
         "version": "1.0.0"
     },
-    "servers": [
-        {
-            "url": "/api",
-            "description": "API Server"
-        }
-    ],
     "paths": {
-        "/auth/register": {
+        "/api/register": {
             "post": {
                 "tags": [
                     "Authentication"

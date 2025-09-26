@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Webhooks\Http\Controllers\WebhooksController;
+use Modules\Webhooks\app\Http\Controllers\WebhooksController;
 use Modules\Webhooks\app\Http\Controllers\TenantWebhookController;
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
