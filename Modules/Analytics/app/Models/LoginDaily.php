@@ -14,7 +14,6 @@ class LoginDaily extends Model
     protected $table = 'login_daily';
 
     protected $fillable = [
-        'tenant_id',
         'date',
         'login_count',
         'successful_logins',
@@ -68,7 +67,7 @@ class LoginDaily extends Model
         if ($this->login_count === 0) {
             return 0;
         }
-        
+
         return round(($this->successful_logins / $this->login_count) * 100, 2);
     }
 
@@ -80,7 +79,7 @@ class LoginDaily extends Model
         if ($this->successful_logins === 0) {
             return 0;
         }
-        
+
         return round(($this->two_factor_logins / $this->successful_logins) * 100, 2);
     }
 }

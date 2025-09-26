@@ -18,12 +18,88 @@ use Modules\User\Models\User;
 use Modules\Auth\Models\MagicLinkToken;
 use Stancl\Tenancy\Facades\Tenancy;
 
+/**
+ * @OA\Schema(
+ *     schema="AuthToken",
+ *     type="object",
+ *     @OA\Property(property="access_token", type="string", description="JWT access token"),
+ *     @OA\Property(property="refresh_token", type="string", description="JWT refresh token"),
+ *     @OA\Property(property="token_type", type="string", example="bearer", description="Token type"),
+ *     @OA\Property(property="expires_in", type="integer", example=3600, description="Token expiration time in seconds")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UserProfile",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer", description="User ID"),
+ *     @OA\Property(property="global_id", type="string", format="uuid", description="Global user identifier"),
+ *     @OA\Property(property="name", type="string", description="User full name"),
+ *     @OA\Property(property="email", type="string", format="email", description="User email address"),
+ *     @OA\Property(property="email_verified_at", type="string", format="date-time", nullable=true, description="Email verification timestamp"),
+ *     @OA\Property(property="two_factor_enabled", type="boolean", description="Whether 2FA is enabled"),
+ *     @OA\Property(property="status", type="string", enum={"active", "inactive", "suspended"}, description="User status"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", description="Account creation timestamp")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="TwoFactorRequired",
+ *     type="object",
+ *     @OA\Property(property="user_id", type="integer", description="User ID requiring 2FA"),
+ *     @OA\Property(property="email", type="string", format="email", description="User email"),
+ *     @OA\Property(property="requires_2fa", type="boolean", example=true, description="Indicates 2FA verification is required")
+ * )
+ */
+
 class AuthController extends Controller
 {
     use ApiResponse;
 
     /**
-     * Register a new user.
+     * @OA\Post(
+     *     path="/api/auth/register",
+     *     operationId="registerUser",
+     *     tags={"Authentication"},
+     *     summary="Register a new user",
+     *     description="Register a new user account with email verification",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="User registration data",
+     *         @OA\JsonContent(
+     *             required={"name", "email", "password", "password_confirmation"},
+     *             @OA\Property(property="name", type="string", description="User full name", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", description="User email address", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", description="User password (min 8 chars)", example="password123"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password", description="Password confirmation", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/ApiResponse"),
+     *                 @OA\Schema(
+     *                     @OA\Property(
+     *                         property="data",
+     *                         type="object",
+     *                         @OA\Property(property="user", ref="#/components/schemas/UserProfile"),
+     *                         @OA\Property(property="verification_sent", type="boolean", example=true)
+     *                     )
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Registration error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function register(RegisterRequest $request, RegisterService $registerService): JsonResponse
     {
@@ -37,7 +113,62 @@ class AuthController extends Controller
     }
 
     /**
-     * Get a JWT via given credentials.
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     operationId="loginUser",
+     *     tags={"Authentication"},
+     *     summary="Authenticate user",
+     *     description="Authenticate user with email and password, supports 2FA",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="User login credentials",
+     *         @OA\JsonContent(
+     *             required={"email", "password"},
+     *             @OA\Property(property="email", type="string", format="email", description="User email address", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", description="User password", example="password123"),
+     *             @OA\Property(property="remember_me", type="boolean", description="Remember user session", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Authentication successful",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/ApiResponse"),
+     *                 @OA\Schema(
+     *                     @OA\Property(property="data", ref="#/components/schemas/AuthToken")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=202,
+     *         description="2FA verification required",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/ApiResponse"),
+     *                 @OA\Schema(
+     *                     @OA\Property(property="data", ref="#/components/schemas/TwoFactorRequired")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Account not verified, suspended, or inactive",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function login(LoginRequest $request, LoginService $loginService): JsonResponse
     {
@@ -64,7 +195,44 @@ class AuthController extends Controller
     }
 
     /**
-     * Verify two factor authentication.
+     * @OA\Post(
+     *     path="/api/auth/login/2fa",
+     *     operationId="verifyTwoFactor",
+     *     tags={"Authentication"},
+     *     summary="Verify 2FA code",
+     *     description="Complete login process by verifying 2FA code",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="2FA verification data",
+     *         @OA\JsonContent(
+     *             required={"user_id", "otp"},
+     *             @OA\Property(property="user_id", type="integer", description="User ID from login response", example=1),
+     *             @OA\Property(property="otp", type="string", description="6-digit 2FA code", example="123456")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="2FA verification successful",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/ApiResponse"),
+     *                 @OA\Schema(
+     *                     @OA\Property(property="data", ref="#/components/schemas/AuthToken")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid 2FA code",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function verifyTwoFactor(VerifyTwoFactorRequest $request, LoginService $loginService): JsonResponse
     {
@@ -82,7 +250,42 @@ class AuthController extends Controller
     }
 
     /**
-     * Mark the authenticated user's email address as verified using magic link.
+     * @OA\Get(
+     *     path="/api/auth/email/verify",
+     *     operationId="verifyEmail",
+     *     tags={"Authentication"},
+     *     summary="Verify email address",
+     *     description="Verify user's email address using magic link token",
+     *     @OA\Parameter(
+     *         name="token",
+     *         in="query",
+     *         required=true,
+     *         description="Email verification token from magic link",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Email verified successfully",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/ApiResponse"),
+     *                 @OA\Schema(
+     *                     @OA\Property(property="data", type="null")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid or expired verification token",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function verifyEmail(Request $request): JsonResponse
     {
@@ -118,7 +321,48 @@ class AuthController extends Controller
     }
 
     /**
-     * Resend the email verification notification.
+     * @OA\Post(
+     *     path="/api/auth/email/resend",
+     *     operationId="resendVerification",
+     *     tags={"Authentication"},
+     *     summary="Resend email verification",
+     *     description="Resend email verification link to user",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Email to resend verification to",
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", description="User email address", example="john@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Verification link sent",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/ApiResponse"),
+     *                 @OA\Schema(
+     *                     @OA\Property(property="data", type="null")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Email already verified or resend failed",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function resendVerification(Request $request, RegisterService $registerService): JsonResponse
     {
